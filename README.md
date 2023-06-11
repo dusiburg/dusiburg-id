@@ -1,1 +1,1 @@
-## **Dusiburg ID is an IT Service** of the Dusiburg Republic with digital documents, virtual currency and access to government services for DU citizens.
+**Dusiburg ID is an IT Service** of the Dusiburg Republic with digital documents, virtual currency and access to government services for DU citizens.
