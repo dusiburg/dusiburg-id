@@ -1,0 +1,21 @@
+{
+  "name": "dusiburg_id",
+  "version": "2.5.1",
+  "description": "Backend and API for Dusiburg ID",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "DU IT Department & Kotosoft",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.1",
+    "chalk": "^5.2.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "pg": "^8.10.0"
+  }
+}
