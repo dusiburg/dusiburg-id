@@ -4,6 +4,7 @@ import pg from "pg";
 import jwt from "jsonwebtoken";
 import chalk from "chalk";
 import bcrypt from "bcrypt";
+import cors from "cors";
 
 const app = express();
 const port = 3301;
@@ -21,6 +22,7 @@ function checkContentType(req, res, next) {
   next();
 }
 
+app.use(cors());
 app.use(bodyParser.json());
 app.use(checkContentType);
 
@@ -93,9 +95,7 @@ app.post("/api/login", async (req, res) => {
 
     const result = await pool.query("SELECT uid, password FROM test WHERE login = $1", [login]);
     const user = result.rows[0];
-
-    console.log("Someone tried to connect");
-
+    
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ status: 401, error: "Invaild login or password" });
     }
