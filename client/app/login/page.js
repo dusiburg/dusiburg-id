@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import Header from "@/components/header/header";
-import Main from "@/components/main/main";
-import Input from "@/components/input/input";
-import Button from "@/components/button/button";
-import { handleLogin } from "@/api/auth";
+import { redirect } from "next/navigation";
+import Header from "@/app/components/header/header";
+import Center from "../components/center/center";
+import Input from "@/app/components/input/input";
+import Button from "@/app/components/button/button";
+import { handleLogin } from "@/app/api/auth";
 
 export default function Auth() {
   const [login, setLogin] = useState("");
@@ -16,21 +17,24 @@ export default function Auth() {
 
   const handleLoginButton = async () => {
     setIsLoading(true);
-    await handleLogin(login, password);
-  }
+    
+    if (await handleLogin(login, password)) {
+      alert("Something is happend...");
+    } else {
+      () => redirect("/my");
+    }
 
-  if (isLoading) {
-    console.log("Loading");
+    setIsLoading(false);
   }
 
   return (
     <>
       <Header />
-      <Main>
+      <Center>
         <div className="flex flex-col gap-4 items-center text-center">
           <Image src="/emojis/key.png" width={64} height={64} alt="key" loading="lazy" />
           <div className="text-3xl">Авторизация</div>
-          <div className="text-base">Войдите в свой аккаунт Dusiburg ID или создайте новый</div>
+          <div className="text-base">Войдите в свой аккаунт Dusiburg ID или <a href="/register" className="text-gray-300">создайте новый</a></div>
         </div>
         <div className="mt-8">
           <div className="w-full flex flex-col gap-3">
@@ -39,7 +43,7 @@ export default function Auth() {
             <Button value="Войти" onClick={() => handleLoginButton()} />
           </div>
         </div>
-      </Main>
+      </Center>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import NavButton from "@/components/header/navbutton";
+import NavButton from "@/app/components/header/navbutton";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,9 +31,9 @@ export default function Header() {
         <div className="flex flex-col gap-2 w-5/6 p-3 rounded-xl shadow-lg bg-zinc-800 ring-1 ring-inset ring-zinc-700/75">
           <NavButton type="mobile" onClick={handleMenuToggle}><i className="bi bi-x-lg"></i>Закрыть меню</NavButton>
         </div>
-        <div className="flex flex-col gap-2 w-5/6 p-3 rounded-xl shadow-lg bg-zinc-800 ring-1 ring-inset ring-zinc-700/75">
+        <div className="flex flex-col w-5/6 p-3 rounded-xl shadow-lg bg-zinc-800 ring-1 ring-inset ring-zinc-700/75">
           {links.map((link) => (
-            <NavButton key={link.text} href={link.href} type="mobile">
+            <NavButton key={link.text} href={link.href} onClick={handleMenuToggle} type="mobile">
               <i className={`bi bi-${link.icon}`}></i>{link.text}
             </NavButton>
           ))}
@@ -70,7 +70,7 @@ export default function Header() {
             </div>
           </div>
           <div className="flex items-center">
-            <NavButton href="/auth" type="secondary">
+            <NavButton href="/login" type="secondary">
               <i className="bi bi-box-arrow-in-left text-2xl lg:text-lg"></i>
               <div className="hidden lg:flex">Авторизация</div>
             </NavButton>
