@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { redirect } from "next/navigation";
 import Header from "@/app/components/header/header";
 import Center from "../components/center/center";
 import Input from "@/app/components/input/input";
@@ -13,18 +12,10 @@ export default function Auth() {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleLoginButton = async () => {
-    setIsLoading(true);
-    
     if (await handleLogin(login, password)) {
       alert("Something is happend...");
-    } else {
-      () => redirect("/my");
     }
-
-    setIsLoading(false);
   }
 
   return (

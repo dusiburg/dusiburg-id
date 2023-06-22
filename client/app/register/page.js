@@ -17,18 +17,10 @@ export default function Auth() {
 
   const [step, setStep] = useState(1);
 
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleRegisterButton = async () => {
-    setIsLoading(true);
-    
     if (await handleRegister(login, password, name, surname)) {
       alert("Something is happend...");
-    } else {
-      () => redirect("/login");
     }
-
-    setIsLoading(false);
   }
 
   const firstStep = () => {
