@@ -3,20 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --col-background: #18181b;
   --col-text: #ffffff;
+  --col-background: #141414;
 }
 
 * {
-  -webkit-tap-highlight-color: transparent;
-}
-
-html {
-  width: 100vw;
-  height: 100vh;
+  box-sizing: border-box;
 }
 
 body {
-  background-color: var(--col-background);
   color: var(--col-text);
+  background-color: var(--col-background);
+}
+
+body::-webkit-scrollbar {
+  width: 0.5rem;
+}
+body::-webkit-scrollbar-track {
+  background: var(--col-background);
+}
+body::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border: 0.05rem solid var(--col-background);
+  border-radius: 18px;
 }

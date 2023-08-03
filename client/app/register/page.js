@@ -1,74 +1,54 @@
 "use client"
 
-import React, { useState } from "react";
-import Image from "next/image";
-import { redirect } from "next/navigation";
-import Header from "@/app/components/header/header";
-import Center from "@/app/components/center/center";
-import Input from "@/app/components/input/input";
-import Button from "@/app/components/button/button";
-import { handleRegister } from "@/app/api/auth";
+import { useForm } from "react-hook-form";
+import Link from "next/link";
+import { handleLogin, hasCookie } from "@/app/api/actions";
+import { useRouter } from "next/navigation";
+import Header from "@/app/components/header";
+import Input from "@/app/components/input";
+import Button from "@/app/components/button";
 
-export default function Auth() {
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
+export default function Register() {
+  const router = useRouter();
 
-  const [step, setStep] = useState(1);
-
-  const handleRegisterButton = async () => {
-    if (await handleRegister(login, password, name, surname)) {
-      alert("Something is happend...");
+  async function isLogged() {
+    if (await hasCookie("token")) {
+      router.push("/my");
     }
   }
+  
+  isLogged();
 
-  const firstStep = () => {
-    return (
-      <>
-        <Input value={login} placeholder="Логин" onChange={(e) => setLogin(e.target.value)} />
-        <Input value={password} type="password" placeholder="Пароль" onChange={(e) => setPassword(e.target.value)} />
-        <Button value="Далее ->" onClick={() => setStep(2)} />
-      </>
-    );
-  }
+  const { handleSubmit, setValue } = useForm();
 
-  const secondStep = () => {
-    return (
-      <>
-        <Input value={name} placeholder="Имя" onChange={(e) => setName(e.target.value)} />
-        <Input value={surname} placeholder="Фамилия" onChange={(e) => setSurname(e.target.value)} />
-        <Button value="Регистрация" onClick={() => handleRegisterButton()} />
-      </>
-    );
-  }
-
-  const renderStep = () => {
-    switch (step) {
-      case 1:
-        return firstStep();
-      case 2:
-        return secondStep();
-      default:
-        return null;
+  const onSubmit = async (data) => {
+    if (await handleLogin(data)) {
+      alert("Ошибка");
+    } else {
+      router.push("/my");
     }
-  }
+  };
 
   return (
     <>
       <Header />
-      <Center>
-        <div className="flex flex-col gap-4 items-center text-center">
-          <Image src="/emojis/key.png" width={64} height={64} alt="key" loading="lazy" />
-          <div className="text-3xl">Регистрация</div>
-          <div className="text-base"><a href="/login" className="text-gray-300">Войдите</a> в свой аккаунт Dusiburg ID или создайте новый</div>
-        </div>
-        <div className="mt-8">
-          <div className="w-full flex flex-col gap-3">
-            {renderStep()}
+      <div className="flex justify-center px-5 md:px-10 py-10">
+        <div className="flex flex-col gap-2">
+          <h3 className="text-2xl text-center">Авторизация</h3>
+          <div className="flex flex-col gap-2 w-80 sm:w-96 rounded-xl">
+            <p className="mb-2.5 text-base text-center text-gray-100">Зарегистрируйтесь в Dusiburg ID,<br />чтобы использовать все функции!</p>
+            <div className="flex flex-row gap-2 w-full mb-1.5 p-0.5 text-base rounded-lg select-none bg-zinc-800/60">
+              <Link href="/login" className="w-1/2 px-2.5 py-0.5 text-center text-base rounded-lg duration-200 hover:cursor-pointer hover:bg-zinc-800">Вход</Link>
+              <div className="w-1/2 px-2.5 py-0.5 text-center text-base rounded-lg bg-white text-black">Регистрация</div>
+            </div>
+            <Input placeholder="Логин" onChange={(event) => setValue("login", event.target.value)} />
+            <Input type="password" placeholder="Пароль" onChange={(event) => setValue("password", event.target.value)} />
+          </div>
+          <div className="flex flex-col gap-4 mt-2">
+            <Button onClick={handleSubmit(onSubmit)} type="primary">Зарегистрироваться</Button>
           </div>
         </div>
-      </Center>
+      </div>
     </>
   );
 }

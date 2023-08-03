@@ -1,22 +1,12 @@
 import express from "express";
-import bodyParser from "body-parser";
 import pg from "pg";
+import { hash, compare } from "bcrypt";
 import jwt from "jsonwebtoken";
-import chalk from "chalk";
-import bcrypt from "bcrypt";
 import cors from "cors";
-import { v4 as uuidv4 } from "uuid";
+import chalk from "chalk";
 
 const app = express();
-const port = 3301;
-
-console.log(chalk.bold("Запуск Dusiburg ID Server 2.5.1..."));
-console.log(`${chalk.bgMagenta.bold("Summer")} is ${chalk.bgMagenta.bold("coming")}!\n`);
-
-console.log(chalk.green("Модули успешно загружены!"));
-
-app.use(cors());
-app.use(bodyParser.json());
+const port = 3300;
 
 const db = {
   user: "gen_user",
@@ -34,142 +24,75 @@ const pool = new pg.Pool({
   port: db.port,
 });
 
-pool.connect((error) => {
-  if (error) {
-    console.error(chalk.red(`Error connecting to DU Database Port: ${error}`));
-  } else {
-    console.log(chalk.green("Success") + " connection to DU Database Port!");
-  }
-});
-
-let secret_key;
-
-async function getSecretKey() {
-  try {
-    const result = await pool.query("SELECT secret_key FROM secret_keys WHERE id = 1");
-    secret_key = result.rows[0].secret_key;
-  } catch (error) {
-    console.error(chalk.red(`Ошибка при получении секретного ключа: ${error}`));
-  }
-}
-
-getSecretKey();
-
-async function generateUid() {
-  let uid;
-
-  do {
-    uid = uuidv4();
-    const result = await pool.query("SELECT uid FROM users WHERE uid = $1", [uid]);
-    if (result.rows.length === 0) {
-      break;
-    }
-  } while (true);
-
-  return uid;
-}
-
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ status: 401, message: "Unauthorized" });
-  }
-
-  jwt.verify(token, secret_key, (error, decodedToken) => {
-    const ip = req.ip;
-
-    if (error) {
-      return res.status(403).json({ status: 403, message: "Token has expired" });
-    }
-
-    if (decodedToken.ip !== ip) {
-      return res.status(403).json({ status: 403, message: "Invalid client IP" });
-    }
-
-    req.uid = decodedToken.uid;
-    next();
-  });
-}
-
-app.post("/api/login", async (req, res) => {
-  try {
-    const ip = req.ip;
-    const { login, password } = req.body;
-
-    const result = await pool.query("SELECT uid, password FROM users WHERE login = $1", [login]);
-    const user = result.rows[0];
-    
-    if (!user || !bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ status: 401, message: "Invalid login or password" });
-    }
-
-    const token = jwt.sign({ uid: user.uid, ip: ip }, secret_key, { expiresIn: "7d" });
-    res.json({ status: 200, token: token });
-  } catch (error) {
-    console.error(chalk.red(error));
-    res.status(500).json({ status: 500, message: "Internal Server Error" });
-  }
-});
+app.use(cors());
+app.use(express.json());
 
 app.post("/api/register", async (req, res) => {
   try {
-    const { login, password, name, surname } = req.body;
-    
-    if (!login || !password || !name || !surname) {
-      return res.status(400).json({ status: 400, error: "Missing required fields" });
+    const { login, password, name, surname, country, gender } = req.body;
+
+    if (!login || !password || !name || !surname || !country || !gender) {
+      return res.status(400).json({ error: "Пожалуйста, заполните все обязательные поля." });
     }
 
-    const existingUser = await pool.query("SELECT login FROM users WHERE login = $1", [login]);
-    if (existingUser.rowCount > 0) {
-      return res.status(409).json({ status: 409, error: "User already exists" });
-    }
+    const hashedPassword = await hash(password, 10);
 
-    const uid = await generateUid();
-    const hashedPassword = bcrypt.hashSync(password, 10);
+    const query = "INSERT INTO users (login, password, name, surname, country, gender) VALUES ($1, $2, $3, $4, $5, $6)";
+    await pool.query(query, [login, hashedPassword, name, surname, country, gender]);
 
-    await pool.query("INSERT INTO users (uid, login, password, name, surname) VALUES ($1, $2, $3, $4, $5)", [uid, login, hashedPassword, name, surname]);
-    
-    res.json({ status: 200, uid: uid });
+    res.status(201).json({ message: "Регистрация успешна." });
   } catch (error) {
-    console.error(chalk.red(error));
-    res.status(500).json({ status: 500, error: "Internal Server Error" });
+    console.error(chalk.red("Ошибка при регистрации:"), error);
+    res.status(500).json({ error: "Произошла ошибка при регистрации." });
   }
 });
 
-app.get("/api/errors/:code", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
-    const code = req.params.code;
+    const { login, password } = req.body;
 
-    const result = await pool.query("SELECT message FROM errors WHERE code = $1", [code]);
-    if (result.rowCount === 0) {
-      res.json({ status: 404, message: "Code not found" });
-    } else {
-      const error = result.rows[0];
-      res.json({ status: 200, message: error.message });
+    if (!login || !password) {
+      return res.status(400).json({ error: "Пожалуйста, заполните все обязательные поля." });
     }
-  } catch (error) {
-    console.error(chalk.red(error));
-    res.status(500).json({ status: 500, message: "Internal Server Error" });
-  }
-});
 
-app.post("/api/user", authenticateToken, async (req, res) => {
-  try {
-    const uid = req.uid;
-    const result = await pool.query("SELECT login, name, surname FROM users WHERE uid = $1", [uid]);
+    const query = "SELECT * FROM users WHERE login = $1";
+    const result = await pool.query(query, [login]);
     const user = result.rows[0];
 
-    if (!user) return res.status(404).json({ status: 404, message: "User not found" });
+    if (!user) {
+      return res.status(401).json({ error: "Неверное имя пользователя или пароль." });
+    }
 
-    res.json({ status: 200, user: user });
+    const passwordMatch = await compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Неверное имя пользователя или пароль." });
+    }
+
+    const token = jwt.sign({ id: user.id }, "your_secret_key");
+    res.status(200).json({ token: token });
   } catch (error) {
-    console.error(chalk.red(error));
-    res.status(500).json({ status: 500, message: "Internal Server Error" });
+    console.error(chalk.red("Ошибка при входе:"), error);
+    res.status(500).json({ error: "Произошла ошибка при входе." });
+  }
+});
+
+app.post("/api/user", (req, res) => {
+  try {
+    const token = req.headers.authorization.split(" ")[1];
+
+    const decodedToken = jwt.verify(token, "your_secret_key");
+
+    const query = "SELECT name, surname, country, gender FROM users WHERE id = $1";
+    const result = pool.query(query, [decodedToken.id]);
+    const user = result.rows[0];
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error(chalk.red("Ошибка при получении профиля:"), error);
+    res.status(401).json({ error: "Неверный токен." });
   }
 });
 
 app.listen(port, () => {
-  console.log(chalk.cyan.bold(`Сервер запущен на порту ${port}!\n`));
+  console.log(chalk.green(`Сервер запущен на порту ${port}.`));
 });
